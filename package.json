@@ -1,0 +1,45 @@
+{
+  "name": "playwrightts",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --import tsx ./node_modules/@cucumber/cucumber/bin/cucumber.js --config configs/cucumber-allure.ts",
+    "test:local": "node --import tsx ./node_modules/@cucumber/cucumber/bin/cucumber.js --config configs/cucumber-local.ts",
+    "test:api": "node --import tsx ./node_modules/@cucumber/cucumber/bin/cucumber.js --config configs/cucumber-api.ts",
+    "test:unit": "node --import tsx --test tests/*.test.ts",
+    "report": "allure serve allure-results",
+    "test:pw": "playwright test --config=playwrightTestRunner/configs/playwright.config.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": "22 || 24 || >=26",
+    "npm": ">=10"
+  },
+  "author": "Min He",
+  "license": "ISC",
+  "description": "Playwright with Cucumber",
+  "devDependencies": {
+    "@cucumber/cucumber": "^13.3.0",
+    "@cucumber/messages": "^34.2.1",
+    "@faker-js/faker": "^10.6.0",
+    "@playwright/test": "^1.65.0",
+    "@types/lodash": "^4.17.27",
+    "@types/nconf": "^0.10.7",
+    "@types/node": "^26.6.6",
+    "allure-commandline": "^2.46.1",
+    "allure-cucumberjs": "^3.14.0",
+    "allure-js-commons": "^3.14.0",
+    "allure-playwright": "^3.14.0",
+    "axios": "^1.8.1",
+    "csv-parser": "^3.2.0",
+    "lodash": "^4.17.21",
+    "nconf": "^0.12.1",
+    "playwright": "^1.65.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "fsevents@2.3.3": true
+  }
+}

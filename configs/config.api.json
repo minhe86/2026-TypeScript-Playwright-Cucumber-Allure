@@ -1,0 +1,9 @@
+{
+  "apiBaseUrl": "https://reqres.in",
+  "user" : {
+    "email": "michael.lawson@reqres.in",
+    "password": "pistol",
+    "firstName": "Michael",
+    "lastName": "Lawson"
+  }
+}

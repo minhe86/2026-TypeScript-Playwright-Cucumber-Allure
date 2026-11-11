@@ -1,0 +1,9 @@
+{
+  "swagLabsBaseUrl": "https://www.saucedemo.com",
+  "cucumberTimeout": {
+    "default": 60000
+  },
+  "standardUsername": "standard_user",
+  "passwordFallUsers": "secret_sauce",
+  "headless": true
+}

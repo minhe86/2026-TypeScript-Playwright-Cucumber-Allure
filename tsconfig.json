@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
+    "sourceMap": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": [
+    "api/**/*.ts",
+    "configs/**/*.ts",
+    "data/**/*.ts",
+    "pages/**/*.ts",
+    "step-definitions/**/*.ts",
+    "playwrightTestRunner/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "allure-results",
+    "allure-report",
+    "test-results",
+    "playwright-report",
+    "blob-report",
+    "playwrightTestRunner/html-results"
+  ]
+}

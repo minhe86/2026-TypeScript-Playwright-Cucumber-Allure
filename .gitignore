@@ -1,0 +1,5 @@
+node_modules/
+/test-results/
+/playwrightTestRunner/html-results
+allure-results/
+cucumber-report.html
