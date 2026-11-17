@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { Given, When, Then, setDefaultTimeout } from "@cucumber/cucumber";
+import { Given, When, Then } from "@cucumber/cucumber";
 import type { DataTable } from "@cucumber/cucumber";
 import UIPage from "../../pages/components/UIPage.ts";
 import SideNavigationMenu from "../../pages/components/SideNavigationMenu.ts";
@@ -10,9 +10,6 @@ import CheckoutCartPage from "../../pages/CheckoutCart.ts";
 import CheckoutOverviewPage from "../../pages/CheckoutOverview.ts";
 import type { ScenarioWorld } from "./support/world.ts";
 import { getRequiredTableValue } from "./support/dataTable.ts";
-import nconf from "nconf";
-
-setDefaultTimeout(nconf.get("cucumberTimeout:default"));
 
 Given<ScenarioWorld>("User launches SwagLabs application URL", async function () {
   if (!this.page) {

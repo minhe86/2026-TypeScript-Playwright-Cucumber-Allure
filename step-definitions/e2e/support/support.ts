@@ -1,21 +1,18 @@
-import { BeforeAll, Before, After, AfterStep } from "@cucumber/cucumber";
+import { Before, After, AfterStep, setDefaultTimeout } from "@cucumber/cucumber";
 import playwright from "playwright";
 import { ContentType } from "allure-js-commons";
-import _ from 'lodash';
 import nconf from 'nconf';
+import "../../../configs/browser.ts";
 import type { ScenarioWorld } from './world.ts';
 
-// Load the config file before all tests
-BeforeAll(async function () {
-  nconf
-      .env({
-        transform: ({ key, value }: { key: string; value: string }) => {
-          return { key, value: _.includes(['true', 'false'], value) ? JSON.parse(value) : value };
-        },
-      })
-      .argv()
-      .file('default', './configs/config.default.json');
-});
+const timeoutValue: unknown = nconf.get("cucumberTimeout:default");
+const timeout = typeof timeoutValue === "string" && timeoutValue.trim() !== ""
+  ? Number(timeoutValue)
+  : timeoutValue;
+if (typeof timeout !== "number" || !Number.isInteger(timeout) || timeout <= 0 || timeout > 2_147_483_647) {
+  throw new Error("cucumberTimeout.default must be a positive integer in milliseconds no greater than 2147483647");
+}
+setDefaultTimeout(timeout);
 
 Before<ScenarioWorld>(async function () {
   this.browser = await playwright.chromium.launch({

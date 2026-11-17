@@ -18,6 +18,7 @@
     "configs/**/*.ts",
     "data/**/*.ts",
     "pages/**/*.ts",
+    "scripts/**/*.ts",
     "step-definitions/**/*.ts",
     "playwrightTestRunner/**/*.ts",
     "tests/**/*.ts"
@@ -29,6 +30,7 @@
     "test-results",
     "playwright-report",
     "blob-report",
-    "playwrightTestRunner/html-results"
+    "playwrightTestRunner/html-results",
+    "playwrightTestRunner/api-html-results"
   ]
 }

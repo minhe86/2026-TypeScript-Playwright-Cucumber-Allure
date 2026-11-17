@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import { Before } from "@cucumber/cucumber";
 import nconf from 'nconf';
+import { parseApiConfig } from "../../../api/utils/config.ts";
 
 Before(async function () {
   nconf
@@ -10,5 +11,8 @@ Before(async function () {
         },
       })
       .argv()
-      .file('default', './configs/config.api.json');
+      .file('default', {
+        file: './configs/config.api.json',
+        format: { parse: parseApiConfig, stringify: JSON.stringify },
+      });
 });

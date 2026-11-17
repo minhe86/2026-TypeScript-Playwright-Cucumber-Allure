@@ -12,7 +12,12 @@ export default class AuthClient {
   }
 
   async getToken(credentials: { email: string; password: string }): Promise<string> {
-    const response = await this.client.post<{ token: string }>('/api/login', credentials);
-    return response.data.token;
+    const response = await this.client.post<unknown>('/api/login', credentials);
+    const data = response.data;
+    const token = typeof data === 'object' && data !== null && 'token' in data ? data.token : undefined;
+    if (typeof token !== 'string' || !token) {
+      throw new Error('API login response must contain a non-empty token');
+    }
+    return token;
   }
 }

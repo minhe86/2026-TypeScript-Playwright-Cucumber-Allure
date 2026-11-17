@@ -36,33 +36,21 @@ export default class CheckoutCartPage extends UIPage {
       product.productNo
     );
 
-    expect(await productLocators.productName.textContent()).toBe(
-      product.productName
-    );
+    await expect(productLocators.productName).toHaveText(product.productName);
     const expectedPriceFormat = "$" + new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(product.productPrice);
-    expect(await productLocators.productPrice.textContent()).toBe(
-      expectedPriceFormat
-    );
-    expect(
-      await productLocators.productAddRemoveButton.isEnabled()
-    ).toBeTruthy();
-    expect(await productLocators.productAddRemoveButton.textContent()).toBe(
-      "Remove"
-    );
+    await expect(productLocators.productPrice).toHaveText(expectedPriceFormat);
+    await expect(productLocators.productAddRemoveButton).toBeEnabled();
+    await expect(productLocators.productAddRemoveButton).toHaveText("Remove");
   };
 
   verifyPageDetails = async (selectedProducts: Product[]) => {
     expect(await this.page.url()).toContain("cart.html");
     expect(await this.page.title()).toContain("Swag Labs");
-    expect(
-      await this.page.locator(this.continueShoppingButton).isVisible()
-    ).toBeTruthy();
-    expect(
-      await this.page.locator(this.checkoutButton).isVisible()
-    ).toBeTruthy();
+    await expect(this.page.locator(this.continueShoppingButton)).toBeVisible();
+    await expect(this.page.locator(this.checkoutButton)).toBeVisible();
     if (selectedProducts.length !== 0) {
       for (const product of selectedProducts) {
         await this.verifyCheckoutProductDetails(product);
@@ -71,7 +59,6 @@ export default class CheckoutCartPage extends UIPage {
   };
 
   checkout = async () => {
-    expect(await this.page.locator(this.checkoutButton).isEnabled()).toBeTruthy();
     await this.page.locator(this.checkoutButton).click();
   };
 }

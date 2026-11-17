@@ -1,19 +1,13 @@
 import { Given } from "@cucumber/cucumber";
 import AuthClient from "../../api/clients/authClient.ts";
-import { expect } from "@playwright/test";
 import nconf from "nconf";
 import type { ApiWorld } from "./support/world.ts";
+import { requireApiCredentials, requireApiUrl } from "../../api/utils/config.ts";
 
 Given<ApiWorld>("User gets an authorization token", async function () {
-  const baseUrl = nconf.get("apiBaseUrl");
-  const emailValue = nconf.get("user:email");
-  const passwordValue = nconf.get("user:password");
+  const baseUrl = requireApiUrl(nconf.get("apiBaseUrl"), "apiBaseUrl");
+  const credentials = requireApiCredentials(nconf.get("user:email"), nconf.get("user:password"), "in API configuration");
 
   const authClient = new AuthClient(baseUrl);
-  const credentials = { email: emailValue, password: passwordValue };
-  const token = await authClient.getToken(credentials);
-
-  await this.attach(`Test Data: token = ${token}`, "text/plain");
-  expect(token).not.toBeNull();
-  this.token = token;
+  this.token = await authClient.getToken(credentials);
 });

@@ -1,7 +1,9 @@
 import _ from "lodash";
-import { test } from '@playwright/test';
-import type { Page } from '@playwright/test';
-import { launchAppUrl, beDirectedToPage } from './utils/common.ts';
+import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { faker } from "@faker-js/faker";
+import nconf from "nconf";
+import { launchAppUrl, beDirectedToPage } from "./utils/common.ts";
 import SideNavigationMenu from "../../../pages/components/SideNavigationMenu.ts";
 import LoginPage from "../../../pages/Login.ts";
 import HomePage from "../../../pages/Home.ts";
@@ -9,169 +11,218 @@ import CheckoutCartPage from "../../../pages/CheckoutCart.ts";
 import CheckoutCompletePage from "../../../pages/CheckoutComplete.ts";
 import CheckoutInformationPage from "../../../pages/CheckoutInformation.ts";
 import CheckoutOverviewPage from "../../../pages/CheckoutOverview.ts";
-import { getProducts } from "../../../data/utils.ts";
-import type { Product } from "../../../data/utils.ts";
-import nconf from 'nconf';
-import { faker } from '@faker-js/faker';
+import { getProducts, Product } from "../../../data/utils.ts";
 
-test.describe.configure({ mode: 'serial' });
-test.describe('User login, purchase products, and log out.', () => {
-    let page: Page;
+const checkoutActions = [
+  { name: "checkout", testId: "checkout", click: (page: Page) => new CheckoutCartPage(page).checkout() },
+  { name: "continue", testId: "continue", click: (page: Page) => new CheckoutInformationPage(page).clickContinue() },
+  { name: "finish", testId: "finish", click: (page: Page) => new CheckoutOverviewPage(page).clickFinish() },
+  { name: "back home", testId: "back-to-products", click: (page: Page) => new CheckoutCompletePage(page).clickBackHome() },
+];
 
-    test.beforeAll(async ({ browser }) => {
-        const context = await browser.newContext();
-        page = await context.newPage();
+for (const { name, testId, click } of checkoutActions) {
+  test(`checkout ${name} waits for the button to become enabled`, async ({ page }) => {
+    await page.setContent(`<button data-test="${testId}" disabled>Continue</button>`);
+    await page.evaluate(() => {
+      const button = document.querySelector<HTMLButtonElement>("button")!;
+      button.addEventListener("click", () => { button.dataset.clicked = "true"; });
+      setTimeout(() => { button.disabled = false; }, 300);
     });
 
-    test.afterAll(async () => {
-        await page.close();
-    });
+    await click(page);
+    await expect(page.locator("button")).toHaveAttribute("data-clicked", "true");
+  });
+}
 
-    let products: Product[];
+for (const testId of ["continue-shopping", "checkout"]) {
+  test(`cart details wait for the ${testId} button to appear`, async ({ page }) => {
+    await page.route("https://example.test/cart.html", (route) => route.fulfill({
+      contentType: "text/html",
+      body: `<title>Swag Labs</title>
+        <button data-test="continue-shopping">Continue shopping</button>
+        <button data-test="checkout">Checkout</button>`,
+    }));
+    await page.goto("https://example.test/cart.html");
+    await page.evaluate((id) => {
+      const button = document.querySelector<HTMLButtonElement>(`[data-test="${id}"]`)!;
+      button.hidden = true;
+      setTimeout(() => { button.hidden = false; }, 300);
+    }, testId);
 
-    test(`1 - User launches SwagLabs application URL`, async () => {
-        await launchAppUrl(page);
-    });
+    await new CheckoutCartPage(page).verifyPageDetails([]);
+  });
+}
 
-    const pageName1 = 'Login';
-    test(`2 - User is directed to "${pageName1}" page`, async () => {
-        await beDirectedToPage(page, pageName1);
-    });
+for (const testId of ["finish", "cancel"]) {
+  test(`checkout overview waits for the ${testId} button to appear`, async ({ page }) => {
+    await page.setContent(`
+      <title>Swag Labs</title>
+      <button data-test="finish">Finish</button>
+      <button data-test="cancel">Cancel</button>
+      <div data-test="subtotal-label">Item total: $0.00</div>
+    `);
+    await page.evaluate((id) => {
+      const button = document.querySelector<HTMLButtonElement>(`[data-test="${id}"]`)!;
+      button.hidden = true;
+      setTimeout(() => { button.hidden = false; }, 300);
+    }, testId);
 
-    const username = nconf.get('standardUsername');
-    const password = nconf.get('passwordFallUsers');
-    test(`3 - User logs in the app using username "${username}" and password "${password}"`, async () => {
-        const user = { "userName": username, "password": password };
-        test.info().attach('Test Data:', {
-            body: JSON.stringify(user),
-            contentType: 'application/json',
-        });
+    await new CheckoutOverviewPage(page).verifyPageDetails([]);
+  });
+}
 
-        const loginPage = await LoginPage.create(page);
-        await loginPage.loginApplication(username, password);
-    });
+test("cart product checks wait for the displayed details to update", async ({ page }) => {
+  await page.setContent(`
+    <div class="cart_item">
+      <a id="item_4_title_link">Other product</a>
+      <div class="inventory_item_price">$9.99</div>
+      <button>Remove</button>
+    </div>
+    <div class="cart_item">
+      <a id="item_1_title_link">Loading</a>
+      <div class="inventory_item_price">Loading</div>
+      <button disabled>Loading</button>
+    </div>
+  `);
+  await page.evaluate(() => {
+    const item = document.querySelectorAll(".cart_item")[1]!;
+    setTimeout(() => { item.querySelector("a")!.textContent = "Backpack"; }, 300);
+    setTimeout(() => { item.querySelector(".inventory_item_price")!.textContent = "$29.99"; }, 900);
+    setTimeout(() => { item.querySelector("button")!.disabled = false; }, 1500);
+    setTimeout(() => { item.querySelector("button")!.textContent = "Remove"; }, 2100);
+  });
 
-    const pageName2 = 'Home';
-    test(`4 - User is directed to "${pageName2}" page`, async () => {
-        await beDirectedToPage(page, pageName2);
-    });
+  await new CheckoutCartPage(page).verifyCheckoutProductDetails(
+    new Product(1, "Backpack", 29.99, "A useful bag")
+  );
+});
 
+test("checkout overview checks wait for the displayed details to update", async ({ page }) => {
+  await page.setContent(`
+    <div class="cart_item_label">
+      <a id="item_4_title_link">Other product</a>
+      <div class="inventory_item_price">$9.99</div>
+      <button>Remove</button>
+    </div>
+    <div class="cart_item_label">
+      <a id="item_1_title_link">Loading</a>
+      <div class="inventory_item_price">Loading</div>
+      <button>Remove</button>
+    </div>
+    <div data-test="subtotal-label">Loading</div>
+  `);
+  await page.evaluate(() => {
+    const item = document.querySelectorAll(".cart_item_label")[1]!;
+    setTimeout(() => { item.querySelector("a")!.textContent = "Backpack"; }, 300);
+    setTimeout(() => { item.querySelector(".inventory_item_price")!.textContent = "$29.99"; }, 900);
+    setTimeout(() => { item.querySelector("button")!.remove(); }, 2400);
+    setTimeout(() => {
+      document.querySelector('[data-test="subtotal-label"]')!.textContent = "Item total: $39.98";
+    }, 3200);
+  });
+
+  const overview = new CheckoutOverviewPage(page);
+  const backpack = new Product(1, "Backpack", 29.99, "A useful bag");
+  await overview.verifyCheckoutProductDetails(backpack);
+  await overview.verifyCheckoutInfoDetails([
+    backpack,
+    new Product(4, "Other product", 9.99, ""),
+  ]);
+});
+
+test("User logs in, purchases products, and logs out", async ({ page }) => {
+  test.setTimeout(2 * 60 * 1000);
+
+  await test.step("Open the application and verify the login page", async () => {
+    await launchAppUrl(page);
+    await beDirectedToPage(page, "Login");
+  });
+
+  await test.step("Log in and verify the home page", async () => {
+    const loginPage = await LoginPage.create(page);
+    await loginPage.loginApplication(
+      nconf.get("standardUsername"),
+      nconf.get("passwordFallUsers")
+    );
+    await beDirectedToPage(page, "Home");
+  });
+
+  const products = await test.step("Verify product details", async () => {
+    const filePath = "data/products.csv";
     const productIndex = 2;
-    test(`5 - User verifies the product details of product "${productIndex}" on Home page`, async () => {
-        const filePath = "data/products.csv";
-        products = await getProducts(filePath);
-        const selectedProduct = _.find(products, { productNo: productIndex });
-        if (!selectedProduct) {
-            throw new Error(`Product ${productIndex} not found in ${filePath}`);
-        }
-        test.info().attach('Test Data:', {
-            body: JSON.stringify(selectedProduct),
-            contentType: 'application/json',
-        });
-
-        const homePage = await HomePage.create(page);
-        await homePage.verifyProductDetails(selectedProduct);
+    const products = await getProducts(filePath);
+    const selectedProduct = _.find(products, { productNo: productIndex });
+    if (!selectedProduct) {
+      throw new Error(`Product ${productIndex} not found in ${filePath}`);
+    }
+    await test.info().attach("Product data", {
+      body: JSON.stringify(selectedProduct),
+      contentType: "application/json",
     });
 
-    const productsIndex = [0, 2];
-    test(`6 - User adds products "[${productsIndex}]" to the cart`, async () => {
-        const toSelectProducts = products.filter((product, index) => productsIndex.includes(index));
+    const homePage = await HomePage.create(page);
+    await homePage.verifyProductDetails(selectedProduct);
+    return products;
+  });
 
-        const homePage = await HomePage.create(page);
-        for (const toSelectProduct of toSelectProducts) {
-            await homePage.addProductToCart(toSelectProduct);
-            if (!toSelectProduct.selected) {
-                toSelectProduct.selected = true;
-            }
-        }
-        test.info().attach('Test Data:', {
-            body: JSON.stringify(toSelectProducts),
-            contentType: 'application/json',
-        });
+  await test.step("Add products to the cart", async () => {
+    const productIndexes = [0, 2];
+    const selectedProducts = products.filter((_, index) => productIndexes.includes(index));
+    const homePage = await HomePage.create(page);
+    for (const product of selectedProducts) {
+      await homePage.addProductToCart(product);
+      product.selected = true;
+    }
+    await test.info().attach("Selected products", {
+      body: JSON.stringify(selectedProducts),
+      contentType: "application/json",
     });
+  });
 
-    test(`7 - User navigates to checkout`, async () => {
-        const homePage = await HomePage.create(page);
-        await homePage.navigateToShoppingCart();
+  await test.step("Verify the cart and proceed to checkout", async () => {
+    const homePage = await HomePage.create(page);
+    await homePage.navigateToShoppingCart();
+    await beDirectedToPage(page, "Checkout Cart");
+    const checkoutCartPage = await CheckoutCartPage.create(page);
+    await checkoutCartPage.verifyPageDetails(_.filter(products, ["selected", true]));
+    await checkoutCartPage.checkout();
+  });
+
+  await test.step("Enter checkout information", async () => {
+    await beDirectedToPage(page, "Checkout Information");
+    const checkoutInformationPage = await CheckoutInformationPage.create(page);
+    await checkoutInformationPage.inputInformation(
+      faker.person.firstName(),
+      faker.person.lastName(),
+      faker.location.zipCode()
+    );
+    await checkoutInformationPage.clickContinue();
+  });
+
+  await test.step("Verify the order and complete the purchase", async () => {
+    await beDirectedToPage(page, "Checkout Overview");
+    const checkoutOverviewPage = await CheckoutOverviewPage.create(page);
+    const selectedProducts = _.filter(products, ["selected", true]);
+    await checkoutOverviewPage.verifyPageDetails(selectedProducts);
+    await test.info().attach("Checkout screenshot", {
+      body: await page.screenshot(),
+      contentType: "image/png",
     });
-
-    const pageName3 = 'Checkout Cart';
-    test(`8 - User is directed to "${pageName3}" page`, async () => {
-        await beDirectedToPage(page, pageName3);
+    await test.info().attach("Selected products", {
+      body: JSON.stringify(selectedProducts),
+      contentType: "application/json",
     });
+    await checkoutOverviewPage.clickFinish();
+  });
 
-    test(`9 - User can see details on "${pageName3}" page`, async () => {
-        const checkoutCartPage = await CheckoutCartPage.create(page);
-        const selectedProducts = _.filter(products, ['selected', true]);
-        await checkoutCartPage.verifyPageDetails(selectedProducts);
-    });
-
-    test(`10 - User checkouts products`, async () => {
-        const checkoutCartPage = await CheckoutCartPage.create(page);
-        await checkoutCartPage.checkout();
-    });
-
-    const pageName4 = 'Checkout Information';
-    test(`11 - User is directed to "${pageName4}" page`, async () => {
-        await beDirectedToPage(page, pageName4);
-    });
-
-    test(`12 - User inputs user information`, async () => {
-        const checkoutFirstName = faker.person.firstName();
-        const checkoutLastName = faker.person.lastName();
-        const checkoutZipCode = faker.location.zipCode();
-        const checkoutInformationPage = await CheckoutInformationPage.create(page);
-        await checkoutInformationPage.inputInformation(checkoutFirstName, checkoutLastName, checkoutZipCode);
-        await checkoutInformationPage.clickContinue();
-    });
-
-    const pageName5 = 'Checkout Overview';
-    test(`13 - User is directed to "${pageName5}" page`, async () => {
-        await beDirectedToPage(page, pageName5);
-    });
-
-    test(`14 - User can see details on "${pageName5}" page`, async () => {
-        const checkoutOverviewPage = await CheckoutOverviewPage.create(page);
-        const selectedProducts = _.filter(products, ['selected', true]);
-        await checkoutOverviewPage.verifyPageDetails(selectedProducts);
-    });
-
-    test(`15 - User completes the purchase`, async () => {
-        const screenshot = await page.screenshot();
-        test.info().attach('Screenshot:', {
-            body: screenshot,
-            contentType: 'image/png',
-        });
-        const selectedProducts = _.filter(products, ['selected', true]);
-        test.info().attach('Test Data:', {
-            body: JSON.stringify(selectedProducts),
-            contentType: 'application/json',
-        });
-
-        const checkoutOverviewPage = await CheckoutOverviewPage.create(page);
-        await checkoutOverviewPage.clickFinish();
-    });
-
-    const pageName6 = 'Checkout Complete';
-    test(`16 - User is directed to "${pageName6}" page`, async () => {
-        await beDirectedToPage(page, pageName6);
-    });
-
-    test(`17 - User backs to Home Page`, async () => {
-        const checkoutCompletePage = await CheckoutCompletePage.create(page);
-        await checkoutCompletePage.clickBackHome();
-    });
-
-    test(`18 - User logs out`, async () => {
-        const homePage = await HomePage.create(page);
-        await homePage.navigateToSideMenu();
-
-        const sideNavigationMenu = await SideNavigationMenu.create(page);
-        await sideNavigationMenu.logout();
-    });
-
-    test(`19 - User is directed to "${pageName1}" page again`, async () => {
-        await beDirectedToPage(page, pageName1);
-    });
-
+  await test.step("Return home and log out", async () => {
+    await beDirectedToPage(page, "Checkout Complete");
+    const checkoutCompletePage = await CheckoutCompletePage.create(page);
+    await checkoutCompletePage.clickBackHome();
+    const homePage = await HomePage.create(page);
+    await homePage.navigateToSideMenu();
+    const sideNavigationMenu = await SideNavigationMenu.create(page);
+    await sideNavigationMenu.logout();
+    await beDirectedToPage(page, "Login");
+  });
 });

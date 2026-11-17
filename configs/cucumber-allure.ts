@@ -8,7 +8,7 @@ export default {
   format: ["allure-cucumberjs/reporter"],
   formatOptions: {
     snippetInterface: "async-await",
-    resultsDir: "allure-results",
+    resultsDir: "allure-results/cucumber",
   },
   parallel: 3,
   retry: 2,

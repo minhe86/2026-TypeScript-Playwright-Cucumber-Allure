@@ -1,5 +1,4 @@
 import UIPage from "./components/UIPage.ts";
-import { expect } from "@playwright/test";
 
 export default class CheckoutInformationPage extends UIPage {
   firstNameText = "[data-test='firstName']";
@@ -20,7 +19,6 @@ export default class CheckoutInformationPage extends UIPage {
   };
 
   clickContinue = async () => {
-    expect(await this.page.locator(this.continueButton).isEnabled()).toBeTruthy();
     await this.page.locator(this.continueButton).click();
   };
 }

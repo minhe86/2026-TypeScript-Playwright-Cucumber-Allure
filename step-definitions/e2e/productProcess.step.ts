@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { When, setDefaultTimeout } from "@cucumber/cucumber";
+import { When } from "@cucumber/cucumber";
 import type { DataTable } from "@cucumber/cucumber";
 import { ContentType } from "allure-js-commons";
 import HomePage from "../../pages/Home.ts";
@@ -8,11 +8,8 @@ import CheckoutCompletePage from "../../pages/CheckoutComplete.ts";
 import CheckoutInformationPage from "../../pages/CheckoutInformation.ts";
 import CheckoutOverviewPage from "../../pages/CheckoutOverview.ts";
 import { getProducts } from "../../data/utils.ts";
-import nconf from "nconf";
 import type { ScenarioWorld } from "./support/world.ts";
 import { getRequiredTableValue } from "./support/dataTable.ts";
-
-setDefaultTimeout(nconf.get("cucumberTimeout:default"));
 
 When<ScenarioWorld>("User verifies the product name {string}", async function (productName: string) {
   const homePage = await HomePage.create(this.page);
