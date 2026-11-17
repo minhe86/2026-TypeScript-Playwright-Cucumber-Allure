@@ -6,9 +6,16 @@
     "test": "node --import tsx ./node_modules/@cucumber/cucumber/bin/cucumber.js --config configs/cucumber-allure.ts",
     "test:local": "node --import tsx ./node_modules/@cucumber/cucumber/bin/cucumber.js --config configs/cucumber-local.ts",
     "test:api": "node --import tsx ./node_modules/@cucumber/cucumber/bin/cucumber.js --config configs/cucumber-api.ts",
+    "test:api:local": "node --import tsx tests/support/run-local-api.ts",
     "test:unit": "node --import tsx --test tests/*.test.ts",
-    "report": "allure serve allure-results",
+    "report": "allure serve allure-results/cucumber allure-results/playwright",
+    "report:cucumber": "allure serve allure-results/cucumber",
+    "report:pw": "allure serve allure-results/playwright",
+    "report:generate": "node --import tsx scripts/generate-allure-report.ts combined",
+    "report:generate:cucumber": "node --import tsx scripts/generate-allure-report.ts cucumber",
+    "report:generate:pw": "node --import tsx scripts/generate-allure-report.ts playwright",
     "test:pw": "playwright test --config=playwrightTestRunner/configs/playwright.config.ts",
+    "test:pw:api:live": "playwright test --config=playwrightTestRunner/configs/playwright.api-live.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "engines": {

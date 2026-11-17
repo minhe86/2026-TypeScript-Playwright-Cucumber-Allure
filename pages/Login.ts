@@ -21,11 +21,12 @@ export default class LoginPage extends UIPage {
   };
 
   verifyLoginErrorMessage = async (user: string, passwd: string) => {
+    const error = this.page.getByRole("alert");
     if (user === "locked_out_user" && passwd === "secret_sauce") {
-      expect(await this.page.locator("div.error-message-container").innerText()).toContain(this.errorMessageForLockedUsr);
+      await expect(error).toContainText(this.errorMessageForLockedUsr);
     }
     else {
-      expect(await this.page.locator("div.error-message-container").innerText()).toContain(this.errorMessageForUsrPw);
+      await expect(error).toContainText(this.errorMessageForUsrPw);
     }
   }
 

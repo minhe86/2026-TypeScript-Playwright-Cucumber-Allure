@@ -1,14 +1,9 @@
 import type { APIRequestContext } from '@playwright/test';
+import { getApiBaseUrl } from './config.ts';
 
 export async function createUsersResource(request: APIRequestContext, resourceData: { firstName: string; email: string }) {
-    const response = await request.post('https://reqres.in/api/users', {
-        // seems token is not needed here, should inherit from the context.
-        // headers: {
-        //     Authorization: `Bearer ${token}`
-        //   },
-        data: {
-            resourceData
-        }
+    const response = await request.post(new URL('/api/users', getApiBaseUrl()).toString(), {
+        data: resourceData
     });
 
     if (response.ok()) {
@@ -19,7 +14,7 @@ export async function createUsersResource(request: APIRequestContext, resourceDa
 }
 
 export async function getUsersResourceByResourceId(request: APIRequestContext, resourceId: number) {
-    const response = await request.get(`https://reqres.in/api/users/${resourceId}`);
+    const response = await request.get(new URL(`/api/users/${resourceId}`, getApiBaseUrl()).toString());
     if (response.ok()) {
         return response;
     } else {
@@ -28,10 +23,8 @@ export async function getUsersResourceByResourceId(request: APIRequestContext, r
 }
 
 export async function createRegisterResource(request: APIRequestContext, resourceData: { email?: string; password?: string }) {
-    const response = await request.post('https://reqres.in/api/register', {
-        data: {
-            resourceData
-        }
+    const response = await request.post(new URL('/api/register', getApiBaseUrl()).toString(), {
+        data: resourceData
     });
     return response;
 }

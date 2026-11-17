@@ -1,20 +1,19 @@
 import { Given, When, Then } from "@cucumber/cucumber";
 import ResourceClient from "../../api/clients/resourceClient.ts";
-import type { CreatedResource, RetrievedResource } from "../../api/clients/resourceClient.ts";
 import axios from "axios";
-import type { AxiosResponse } from "axios";
 import ResourceModel from "../../api/models/resourceModel.ts";
 import { validateStatusCode } from "../../api/utils/apiUtils.ts";
 import { expect } from "@playwright/test";
 import nconf from "nconf";
 import type { ApiWorld } from "./support/world.ts";
+import { requireApiUrl } from "../../api/utils/config.ts";
 
-let resourceClient: ResourceClient;
-let resourceId: number;
-let createdResourceResponse: AxiosResponse<CreatedResource>;
-let createdResource: CreatedResource;
-let retrievedResourceResponse: AxiosResponse<RetrievedResource>;
-let retrievedResource: RetrievedResource;
+function getResourceClient(world: ApiWorld): ResourceClient {
+  if (!world.resourceClient) {
+    throw new Error("Resource client is not set in the World. Create it in this scenario first.");
+  }
+  return world.resourceClient;
+}
 
 // Backgroud info get - https://reqres.in/api/users/4
 // {
@@ -31,8 +30,8 @@ Given<ApiWorld>("User creates a resource client", function () {
       "Token is not set in the World. Ensure the authentication step runs first."
     );
   }
-  const baseUrl = nconf.get("apiBaseUrl");
-  resourceClient = new ResourceClient(baseUrl, this.token);
+  const baseUrl = requireApiUrl(nconf.get("apiBaseUrl"), "apiBaseUrl");
+  this.resourceClient = new ResourceClient(baseUrl, this.token);
 });
 
 // Have to assign existing user.id for creating user because https://reqres.in/ only getting existing users for demonstration.
@@ -40,15 +39,19 @@ When<ApiWorld>(
   "User creates a new user resource with name {string} and email {string}",
   async function (name: string, email: string) {
     const resourceData = { name, email };
-    createdResourceResponse = await resourceClient.createUsersResource(
+    this.createdResourceResponse = await getResourceClient(this).createUsersResource(
       resourceData
     );
-    createdResource = createdResourceResponse.data;
-    resourceId = 4;
+    this.resourceId = 4;
   }
 );
 
 Then<ApiWorld>("The user resource should be created successfully", function () {
+  if (!this.createdResourceResponse) {
+    throw new Error("User resource has not been created in this scenario.");
+  }
+  const createdResourceResponse = this.createdResourceResponse;
+  const createdResource = createdResourceResponse.data;
   expect(createdResourceResponse.status).toEqual(201);
 
   const resourceModel = new ResourceModel(
@@ -63,16 +66,23 @@ Then<ApiWorld>("The user resource should be created successfully", function () {
 });
 
 When<ApiWorld>("User retrieves the user resource by ID", async function () {
-  retrievedResourceResponse = await resourceClient.getUsersResource(
-    resourceId
+  if (this.resourceId === undefined) {
+    throw new Error("Resource ID is not set in the World. Create a user resource first.");
+  }
+  const retrievedResourceResponse = await getResourceClient(this).getUsersResource(
+    this.resourceId
   );
-  retrievedResource = retrievedResourceResponse.data;
+  this.retrievedResourceResponse = retrievedResourceResponse;
   expect(retrievedResourceResponse.status).toEqual(200);
 });
 
 Then<ApiWorld>(
   "The user resource details should match name {string} and email {string}",
   function (name: string, email: string) {
+    if (!this.retrievedResourceResponse) {
+      throw new Error("User resource has not been retrieved in this scenario.");
+    }
+    const retrievedResource = this.retrievedResourceResponse.data;
     const resourceModel = new ResourceModel(
       retrievedResource.data.first_name,
       retrievedResource.data.email,
@@ -92,6 +102,8 @@ Then<ApiWorld>(
 When<ApiWorld>(
   "User attempts to create a register resource with invalid data",
   async function () {
+    const resourceClient = getResourceClient(this);
+    this.errorResponse = undefined;
     try {
       await resourceClient.createRegisterResource({});
     } catch (error) {

@@ -1,22 +1,19 @@
 import { defineConfig, devices,} from "@playwright/test";
 import './test.setup.ts'; 
+import { createReporters } from "./reporters.ts";
 
 export default defineConfig({
   timeout: 1 * 60 * 1000, 
-  globalTimeout: 2 * 60 * 1000,
   expect: {
     timeout: 40 * 1000,
   },
-  testDir: "../step-definitions/",
+  testDir: "../step-definitions/e2e/",
+  testIgnore: "**/e2e/seed.spec.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 1 : 4,
-  reporter: [
-    ["html", { outputFolder: "../html-results", open: "always" }],
-    ["list"],
-    ["allure-playwright", { outputFolder: "allure-results" }],
-  ],
+  reporter: createReporters("../html-results"),
   use: {
     headless: true,
     viewport: { width: 1280, height: 720 },

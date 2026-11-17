@@ -1,21 +1,18 @@
-import fs from 'fs';
-import path from 'path';
 import type { APIRequestContext } from '@playwright/test';
+import { getApiBaseUrl, readApiConfig } from './config.ts';
+import { requireApiCredentials } from '../../../../api/utils/config.ts';
 export async function getAuthToken(request: APIRequestContext): Promise<string> {
-    // __dirname for CommonJS only.
-    // const currentDir = new URL('.', import.meta.url).pathname;
-    // const projectRootDir = path.resolve(currentDir, '../../../..');
-    const projectRootDir = process.cwd();
-    const configFilePath = path.join(projectRootDir, 'configs', 'config.api.json');
-    const jsonData = JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
+    const config = readApiConfig();
+    const user = typeof config === 'object' && config !== null && 'user' in config ? config.user : undefined;
+    const { email, password } = requireApiCredentials(
+        typeof user === 'object' && user !== null && 'email' in user ? user.email : undefined,
+        typeof user === 'object' && user !== null && 'password' in user ? user.password : undefined,
+    );
 
-    const apiBaseUrl = jsonData.apiBaseUrl;
-    const { email, password } = jsonData.user;
-
-    const response = await request.post(`${apiBaseUrl}/api/login`, {
+    const response = await request.post(new URL('/api/login', getApiBaseUrl()).toString(), {
         data: {
-            username: email,
-            password: password
+            email,
+            password
         }
     });
 

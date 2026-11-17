@@ -59,9 +59,7 @@ export default class HomePage extends UIPage {
   };
 
   verifyProductName1 = async (productName: string) => {
-    expect(await this.page.locator(this.getProductName(1)).textContent()).toBe(
-      productName
-    );
+    await expect(this.page.locator(this.getProductName(1))).toHaveText(productName);
   };
 
   verifyProductDetails = async (product: Product) => {
@@ -69,24 +67,16 @@ export default class HomePage extends UIPage {
       product.productNo
     );
 
-    expect(await productLocators.productName.textContent()).toBe(
-      product.productName
-    );
-    expect(await productLocators.productDescription.textContent()).toBe(
-      product.productDescription
-    );
+    await expect(productLocators.productName).toHaveText(product.productName);
+    await expect(productLocators.productDescription).toHaveText(product.productDescription);
     const expectedPriceFormat =
       "$" +
       new Intl.NumberFormat("en-US", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(product.productPrice);
-    expect(await productLocators.productPrice.textContent()).toBe(
-      expectedPriceFormat
-    );
-    expect(
-      await productLocators.productAddRemoveButton.isEnabled()
-    ).toBeTruthy();
+    await expect(productLocators.productPrice).toHaveText(expectedPriceFormat);
+    await expect(productLocators.productAddRemoveButton).toBeEnabled();
   };
 
   verifyProductsDetails = async (products: Product[]) => {
@@ -96,20 +86,16 @@ export default class HomePage extends UIPage {
   };
 
   navigateToSideMenu = async () => {
-    expect(await this.page.locator(this.burgerMenu).isEnabled()).toBeTruthy();
     await this.page.locator(this.burgerMenu).click();
   };
 
   navigateToShoppingCart = async () => {
-    expect(await this.page.locator(this.shoppingCartLink).isEnabled()).toBeTruthy();
     await this.page.locator(this.shoppingCartLink).click();
   };
 
   addProductToCart = async (product: Product) => {
     const productLocators = await this.getProductInverntoryLocators(product.productNo);
     await productLocators.productAddRemoveButton.click();
-    expect(await productLocators.productAddRemoveButton.textContent()).toBe(
-      "Remove"
-    );
+    await expect(productLocators.productAddRemoveButton).toHaveText("Remove");
   };
 }

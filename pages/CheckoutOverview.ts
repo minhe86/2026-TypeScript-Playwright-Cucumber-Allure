@@ -37,21 +37,13 @@ export default class CheckoutOverviewPage extends UIPage {
       product.productNo
     );
 
-    expect(
-      await productLocators.productAddRemoveButton.isVisible()
-    ).toBeFalsy();
-
-    expect(await productLocators.productName.textContent()).toBe(
-      product.productName
-    );
+    await expect(productLocators.productName).toHaveText(product.productName);
     const expectedPriceFormat = "$" + new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(product.productPrice);
-    expect(await productLocators.productPrice.textContent()).toBe(
-      expectedPriceFormat
-    );
-
+    await expect(productLocators.productPrice).toHaveText(expectedPriceFormat);
+    await expect(productLocators.productAddRemoveButton).toBeHidden();
   };
 
   verifyCheckoutInfoDetails = async (selectedProducts: Product[]) => {
@@ -65,19 +57,13 @@ export default class CheckoutOverviewPage extends UIPage {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(subtotal);
-    expect(await await this.page.locator(this.subtotalLabel).textContent()).toBe(
-      expectedPriceFormat
-    );
+    await expect(this.page.locator(this.subtotalLabel)).toHaveText(expectedPriceFormat);
   };
 
   verifyPageDetails = async (selectedProducts: Product[]) => {
     expect(await this.page.title()).toContain("Swag Labs");
-    expect(
-      await this.page.locator(this.finishButton).isVisible()
-    ).toBeTruthy();
-    expect(
-      await this.page.locator(this.cancelButton).isVisible()
-    ).toBeTruthy();
+    await expect(this.page.locator(this.finishButton)).toBeVisible();
+    await expect(this.page.locator(this.cancelButton)).toBeVisible();
     if (selectedProducts.length !== 0) {
       for (const product of selectedProducts) {
         await this.verifyCheckoutProductDetails(product);
@@ -87,7 +73,6 @@ export default class CheckoutOverviewPage extends UIPage {
   };
 
   clickFinish = async () => {
-    expect(await this.page.locator(this.finishButton).isEnabled()).toBeTruthy();
     await this.page.locator(this.finishButton).click();
   };
 

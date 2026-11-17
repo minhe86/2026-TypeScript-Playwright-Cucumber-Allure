@@ -1,5 +1,9 @@
 node_modules/
+/.playwright-mcp/
 /test-results/
 /playwrightTestRunner/html-results
+/playwrightTestRunner/api-html-results
 allure-results/
+allure-report/
 cucumber-report.html
+cucumber-api-report.html

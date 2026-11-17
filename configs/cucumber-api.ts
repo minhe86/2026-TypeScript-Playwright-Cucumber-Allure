@@ -4,7 +4,7 @@ export default {
     "step-definitions/api/support/support.ts",
     "step-definitions/api/*.step.ts",
   ],
-  format: ["summary", "progress-bar", ["html", "cucumber-report.html"]],
+  format: ["summary", "progress-bar", ["html", "cucumber-api-report.html"]],
   formatOptions: {
     snippetInterface: "async-await",
   },
